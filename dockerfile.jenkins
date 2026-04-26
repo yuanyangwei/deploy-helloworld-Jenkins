@@ -2,7 +2,7 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# Install Python, pip, unzip, curl, gnupg
+# Install system dependencies: Python, pip, venv, unzip, curl, gnupg
 RUN apt-get update && apt-get install -y \
     python3 python3-pip python3-venv \
     unzip curl gnupg \
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 # Create a Python virtual environment
 RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip \
-    && /opt/venv/bin/pip install pytest
+    && /opt/venv/bin/pip install pytest flask
 
 # --- Install AWS CLI v2 ---
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
@@ -25,7 +25,7 @@ RUN curl -fsSL https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_li
     && mv terraform /usr/local/bin/ \
     && rm terraform.zip
 
-# Add venv to PATH so python/pip/pytest are available globally
+# Add venv to PATH so python/pip/pytest/flask are available globally
 ENV PATH="/opt/venv/bin:/usr/local/bin:${PATH}"
 
 USER jenkins
