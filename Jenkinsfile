@@ -20,6 +20,15 @@ pipeline {
     }
 
     stages {
+        stage('Verify AWS Identity') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDS_ID}"]]) {
+                    withAWS(role: "${DEPLOY_ROLE_NAME}", roleAccount: "${env.AWS_ACCOUNT_ID}", region: "${AWS_REGION}") {
+                        sh "aws sts get-caller-identity"
+                    }
+                }
+            }
+        }
         stage('Auto-Detect Account ID') {
             steps {
                 script {
