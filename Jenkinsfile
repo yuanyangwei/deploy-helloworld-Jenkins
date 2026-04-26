@@ -38,17 +38,18 @@ pipeline {
             }
         }
         stage('Run Tests') {
-        steps {
-            sh 'pytest --maxfail=1 --disable-warnings -q'
+            steps {
+                sh 'pytest --maxfail=1 --disable-warnings -q'
+                }
             }
-        }
 
         stage('Build & Push') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDS_ID}"]]) {
+                    withAWS(role: "${DEPLOY_ROLE_NAME}", roleAccount: "${env.AWS_ACCOUNT_ID}", region: "${AWS_REGION}") {
                         def ecrRegistry = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-                        // Login to ECR
+                        
+                        // Login to ECR using assumed role
                         sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ecrRegistry}"
                         
                         // Build and Push
@@ -58,6 +59,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Terraform Infrastructure') {
             steps {
