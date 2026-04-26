@@ -37,6 +37,11 @@ pipeline {
                 }
             }
         }
+        stage('Run Tests') {
+        steps {
+            sh 'pytest --maxfail=1 --disable-warnings -q'
+            }
+        }
 
         stage('Build & Push') {
             steps {
