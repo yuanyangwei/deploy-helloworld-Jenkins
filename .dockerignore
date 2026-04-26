@@ -1,0 +1,26 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+
+# Ignore virtual environments
+venv/
+.env/
+
+# Ignore Docker build artifacts
+*.log
+
+# Ignore test files (optional, if not needed in repo)
+# test_app.py
+
+# Ignore Terraform state and cache
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Ignore editor and OS files
+.DS_Store
+Thumbs.db
+
+# Ignore ruff cache
+.ruff_cache/

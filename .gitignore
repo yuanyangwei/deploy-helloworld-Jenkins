@@ -1,3 +1,14 @@
 .ruff_cache/
 __pycache__/
 *.pyc
+venv/
+.env/
+*.log
+.terraform/
+/.terraform/providers/
+/.terraform/plugins/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+.DS_Store
+Thumbs.db

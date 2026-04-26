@@ -58,9 +58,10 @@ pipeline {
                     dir('terraform') {
                         sh """
                             terraform init \
-                            -backend-config="bucket=${STATE_BUCKET}" \
-                            -backend-config="key=${PROJECT_NAME}/terraform.tfstate" \
-                            -backend-config="region=${AWS_REGION}"
+                                -backend-config="bucket=${S3_BUCKET_NAME}" \
+                                -backend-config="key=dev/terraform.tfstate" \
+                                -backend-config="region=us-east-1" \
+                                -backend-config="dynamodb_table=${DYNAMO_TABLE_NAME}"
                         """
                         sh "terraform apply -var='image_tag=${GIT_COMMIT_REV}' -auto-approve"
                     }

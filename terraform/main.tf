@@ -8,7 +8,7 @@ terraform {
 
   # REMOVED: Hardcoded values. 
   # Jenkins will inject these via -backend-config during 'terraform init'
-  backend "s3" {}
+  #   backend "s3" {}
 }
 
 provider "aws" {
