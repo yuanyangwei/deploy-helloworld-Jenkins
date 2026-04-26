@@ -58,8 +58,34 @@ resource "aws_ecr_repository" "repo" {
   image_scanning_configuration {
     scan_on_push = true
   }
-}
 
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+}
+# Lifecycle policy: expire untagged images after 30 days
+resource "aws_ecr_lifecycle_policy" "repo_policy" {
+  repository = aws_ecr_repository.repo.name
+  policy     = <<EOF
+  {
+    "rules": [
+      {
+        "rulePriority": 1,
+        "description": "Expire untagged images after 30 days",
+        "selection": {
+          "tagStatus": "untagged",
+          "countType": "sinceImagePushed",
+          "countUnit": "days",
+          "countNumber": 30
+        },
+        "action": {
+          "type": "expire"
+        }
+      }
+    ]
+  }
+  EOF
+}
 # --- SECURITY ---
 resource "aws_security_group" "ecs_sg" {
   name   = "${var.project_name}-sg"

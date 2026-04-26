@@ -54,6 +54,10 @@ pipeline {
                         
                         // Build and Push
                         sh "docker build -t ${ecrRegistry}/${PROJECT_NAME}:${GIT_COMMIT_REV} ."
+                        sh """
+                            aws ecr describe-repositories --repository-names ${PROJECT_NAME} \
+                            || aws ecr create-repository --repository-name ${PROJECT_NAME}
+                            """
                         sh "docker push ${ecrRegistry}/${PROJECT_NAME}:${GIT_COMMIT_REV}"
                     }
                 }
