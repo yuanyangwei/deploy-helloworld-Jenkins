@@ -2,10 +2,11 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# Install system dependencies: Python, pip, venv, unzip, curl, gnupg
+# Install system dependencies: Python, pip, venv, unzip, curl, gnupg, Docker CLI
 RUN apt-get update && apt-get install -y \
     python3 python3-pip python3-venv \
     unzip curl gnupg \
+    docker.io docker-compose \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a Python virtual environment
