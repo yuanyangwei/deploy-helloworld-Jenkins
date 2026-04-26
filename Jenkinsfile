@@ -63,19 +63,21 @@ pipeline {
 
         stage('Terraform Infrastructure') {
             steps {
-                // withAWS uses the detected account ID and the role name
-                withAWS(role: "${DEPLOY_ROLE_NAME}", roleAccount: "${env.AWS_ACCOUNT_ID}", region: "${AWS_REGION}") {
-                    dir('terraform') {
-                        sh """
-                            terraform init \
-                                -backend-config="bucket=${S3_BUCKET_NAME}" \
-                                -backend-config="key=autodesk-project/terraform.tfstate" \
-                                -backend-config="region=${AWS_REGION}"
-                        """
-                        sh "terraform apply -var='image_tag=${GIT_COMMIT_REV}' -auto-approve"
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDS_ID}"]]) {
+                    withAWS(role: "${DEPLOY_ROLE_NAME}", roleAccount: "${env.AWS_ACCOUNT_ID}", region: "${AWS_REGION}") {
+                        dir('terraform') {
+                            sh """
+                                terraform init \
+                                    -backend-config="bucket=${S3_BUCKET_NAME}" \
+                                    -backend-config="key=autodesk-project/terraform.tfstate" \
+                                    -backend-config="region=${AWS_REGION}"
+                            """
+                            sh "terraform apply -var='image_tag=${GIT_COMMIT_REV}' -auto-approve"
+                        }
                     }
                 }
             }
         }
+
     }
 }
