@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 
 # Copy app and test code
 COPY helloworld.py ./
-COPY test_app.py ./
+
 
 # Expose port (matches Flask default and ECS config)
 EXPOSE 5000

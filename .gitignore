@@ -1,14 +1,30 @@
-.ruff_cache/
-__pycache__/
-*.pyc
-venv/
-.env/
-*.log
-.terraform/
-/.terraform/providers/
-/.terraform/plugins/
+# --- Terraform Secrets & State ---
 *.tfstate
-*.tfstate.*
+*.tfstate.backup
 .terraform.lock.hcl
+.terraform/
+*.tfvars
+*.tfvars.json
+# NEVER commit these if they contain real keys
+override.tf
+override.tf.json
+
+# --- Python Junk ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.pytest_cache/
+
+# --- IDE & System ---
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+
+# --- Secrets (Safety First) ---
+.env
+*.pem
+*.key

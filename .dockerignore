@@ -11,6 +11,10 @@ venv/
 
 # Ignore test files (optional, if not needed in repo)
 # test_app.py
+Jenkinsfile
+test_app.py
+test.py
+*.md
 
 # Ignore Terraform state and cache
 .terraform/
