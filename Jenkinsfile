@@ -9,7 +9,7 @@ pipeline {
         S3_BUCKET_NAME    = 'yuanyang-terraform-state-2026'
         DEPLOY_ROLE_NAME  = 'jenkins-test'
         // Metadata
-        GIT_COMMIT_REV    = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+        GIT_COMMIT_REV    = ""
     }
 
     stages {
@@ -18,6 +18,7 @@ pipeline {
             agent { docker { image 'amazon/aws-cli:latest' } } 
             steps {
                 script {
+                    env.GIT_COMMIT_REV = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding', 
                         credentialsId: "${AWS_CREDS_ID}"
