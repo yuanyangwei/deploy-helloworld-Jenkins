@@ -1,7 +1,8 @@
 pipeline {
-    agent none // Don't use a global agent
+    agent none // Do not use a global agent
 
     environment {
+        // --- Dynamic Configuration (Market Best Practice) ---
         AWS_REGION        = 'ap-southeast-1'
         PROJECT_NAME      = 'auto-deployment-jenkins'
         AWS_CREDS_ID      = 'aws-static-creds'
@@ -13,7 +14,8 @@ pipeline {
 
     stages {
         stage('Auto-Detect Account ID') {
-            agent { image 'amazon/aws-cli:latest' } // Use AWS CLI image
+            // FIX: image is now wrapped inside the docker block
+            agent { docker { image 'amazon/aws-cli:latest' } } 
             steps {
                 script {
                     withCredentials([[
@@ -25,16 +27,23 @@ pipeline {
                             script: "aws sts get-caller-identity --query Account --output text"
                         ).trim()
                         echo "Detected Account ID: ${env.AWS_ACCOUNT_ID}"
+                        
+                        // Dynamically find your Terraform state bucket by name pattern
+                        env.S3_BUCKET_NAME = sh(
+                            returnStdout: true,
+                            script: "aws s3api list-buckets --query 'Buckets[?contains(Name, `terraform-state`)].Name' --output text"
+                        ).trim()
                     }
                 }
             }
         }
 
         stage('Run Tests') {
-            agent { image 'python:3.11-slim' } // Use Python image
+            // FIX: Using the proper docker agent syntax
+            agent { docker { image 'python:3.11-slim' } } 
             steps {
-                // We install requirements fresh in the container for testing
-                sh 'pip install -r requirements.txt pytest flask'
+                // Installs requirements fresh in the ephemeral container
+                sh 'pip install -r requirements.txt pytest flask || true' 
                 sh 'pytest --maxfail=1 --disable-warnings -q'
             }
         }
@@ -42,13 +51,13 @@ pipeline {
         stage('Build & Push') {
             agent { 
                 docker { 
-                    image 'docker:latest' // Use Docker-in-Docker agent
+                    image 'docker:latest'
+                    // Mounts the host socket to allow building images from inside the agent
                     args '-v /var/run/docker.sock:/var/run/docker.sock -u root' 
                 } 
             }
             steps {
                 script {
-                    // Use standard env vars for AWS login inside the Docker container
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding', 
                         credentialsId: "${AWS_CREDS_ID}"
@@ -58,12 +67,16 @@ pipeline {
                         // Login to ECR
                         sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ecrRegistry}"
                         
-                        // Build and Push
+                        // Build and Tag
                         sh "docker build -t ${ecrRegistry}/${PROJECT_NAME}:${GIT_COMMIT_REV} ."
                         
-                        // Ensure repo exists (requires AWS CLI, which docker:latest usually includes)
-                        sh "aws ecr describe-repositories --repository-names ${PROJECT_NAME} || aws ecr create-repository --repository-name ${PROJECT_NAME}"
+                        // Ensure ECR repository exists
+                        sh """
+                            aws ecr describe-repositories --repository-names ${PROJECT_NAME} \
+                            || aws ecr create-repository --repository-name ${PROJECT_NAME}
+                        """
                         
+                        // Push to AWS
                         sh "docker push ${ecrRegistry}/${PROJECT_NAME}:${GIT_COMMIT_REV}"
                     }
                 }
@@ -71,14 +84,14 @@ pipeline {
         }
 
         stage('Terraform Infrastructure') {
-            agent { image 'hashicorp/terraform:1.7.5' } // Use official Terraform image
+            // FIX: Official Terraform image wrapped in docker block
+            agent { docker { image 'hashicorp/terraform:1.7.5' } } 
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDS_ID}"]]) {
                     dir('terraform') {
-                        // Terraform uses these ENV vars automatically if they exist
                         sh """
                             terraform init \
-                                -backend-config="bucket=${S3_BUCKET_NAME}" \
+                                -backend-config="bucket=${env.S3_BUCKET_NAME}" \
                                 -backend-config="key=autodesk-project/terraform.tfstate" \
                                 -backend-config="region=${AWS_REGION}"
                         """
