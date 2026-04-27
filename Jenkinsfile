@@ -30,7 +30,7 @@ pipeline {
                     ]]) {
                         env.AWS_ACCOUNT_ID = sh(script: "aws sts get-caller-identity --query Account --output text", returnStdout: true).trim()
                         // This dynamically updates the bucket name if it matches the pattern
-                        env.S3_BUCKET_NAME = sh(script: "aws s3api list-buckets --query 'Buckets[?contains(Name, `terraform-state`)].Name' --output text", returnStdout: true).trim()
+                        env.S3_BUCKET_NAME = "yuanyang-terraform-state-2026"
                         
                         echo "Targeting Account: ${env.AWS_ACCOUNT_ID} | Revision: ${env.GIT_COMMIT_REV}"
                     }
