@@ -12,28 +12,26 @@ pipeline {
         GIT_COMMIT_REV    = ""
     }
 
-    stages {
-        stage('Auto-Detect Account ID') {
-            // FIX: image is now wrapped inside the docker block
-            agent { docker { image 'amazon/aws-cli:latest' } } 
+        stage('Setup & Discovery') {
+            agent { 
+                docker { 
+                    image 'amazon/aws-cli:latest' 
+                    args '--entrypoint=""' // FIX: Allows Jenkins to run scripts inside this image
+                } 
+            } 
             steps {
                 script {
-                    env.GIT_COMMIT_REV = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    // FIX: Use Jenkins built-in variable (first 7 chars) instead of 'sh git'
+                    env.GIT_COMMIT_REV = "${env.GIT_COMMIT}".take(7)
+                    
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding', 
                         credentialsId: "${AWS_CREDS_ID}"
                     ]]) {
-                        env.AWS_ACCOUNT_ID = sh(
-                            returnStdout: true, 
-                            script: "aws sts get-caller-identity --query Account --output text"
-                        ).trim()
-                        echo "Detected Account ID: ${env.AWS_ACCOUNT_ID}"
+                        env.AWS_ACCOUNT_ID = sh(script: "aws sts get-caller-identity --query Account --output text", returnStdout: true).trim()
+                        env.S3_BUCKET_NAME = sh(script: "aws s3api list-buckets --query 'Buckets[?contains(Name, `terraform-state`)].Name' --output text", returnStdout: true).trim()
                         
-                        // Dynamically find your Terraform state bucket by name pattern
-                        env.S3_BUCKET_NAME = sh(
-                            returnStdout: true,
-                            script: "aws s3api list-buckets --query 'Buckets[?contains(Name, `terraform-state`)].Name' --output text"
-                        ).trim()
+                        echo "Targeting Account: ${env.AWS_ACCOUNT_ID} | Revision: ${env.GIT_COMMIT_REV}"
                     }
                 }
             }
